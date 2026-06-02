@@ -10,15 +10,15 @@ Organize your photos with keyword tags, make non-destructive edits, browse your 
 
 ## Download
 
-Grab the latest installer from the [Releases page](../../releases/latest):
+Grab the latest installer from the [Releases page](../../../../PhotoDewey-for-Windows/releases/latest/):
 
-**[⬇ Download PhotoDewey Setup.exe](../../releases/latest)**
+**[⬇ Download PhotoDewey for Windows](../../../../PhotoDewey-for-Windows/releases/latest/download/PhotoDewey-stable-Setup.exe)**
 
 **Requirements:** Windows 10 or Windows 11 (64-bit)
 
-The installer is per-user — no administrator prompt. The app keeps itself up to date via *Help → Check for Updates…*
+The installer is per-user — no administrator prompt. The app keeps itself up to date, but you can use *Help → Check for Updates…*
 
-> **First run:** Windows may show a SmartScreen warning because the beta installer isn't yet code-signed. Click **More info → Run anyway**. The installer only ever writes to your user profile.
+> **On install:** Windows shows a SmartScreen warning because the beta installer isn't yet code-signed. Click **More info → Run anyway**. The installer only ever writes to your user profile.
 
 ---
 
@@ -41,13 +41,13 @@ JPEG · PNG · TIFF · WebP · NEF (Nikon RAW) · DNG
 ## Getting help
 
 **Something went wrong?**
-Use *Help → Send Feedback* inside the app — it attaches your version, OS, and an anonymous summary automatically. Or open a [bug report](../../issues/new/choose) here on GitHub if you'd like a public conversation other users can follow.
+Use *Help → Send Feedback* inside the app — it attaches your version, OS, and an anonymous summary automatically. Or open a [bug report](../../../../PhotoDewey-for-Windows/issues/new/choose) here on GitHub if you'd like a public conversation other users can follow.
 
 **Have a suggestion?**
-Check the [Issues tab](../../issues) first to see if it's already there — a 👍 reaction on an existing request carries more weight than a duplicate. If it isn't listed, open a [feature request](../../issues/new/choose).
+Check the [Issues tab](../../../../PhotoDewey-for-Windows/issues/) first to see if it's already there — a 👍 reaction on an existing request carries more weight than a duplicate. If it isn't listed, open a [feature request](../../../../PhotoDewey-for-Windows/issues/new/choose).
 
 **Just a question?**
-The in-app User Manual (*Help → User Manual*) covers importing, tagging, editing, exporting, and more. For anything else, open a [workflow question](../../issues/new/choose).
+The in-app User Manual (*Help → User Manual*) covers importing, tagging, editing, exporting, and more. For anything else, open a [workflow question](../../../../PhotoDewey-for-Windows/issues/new/choose).
 
 ---
 
