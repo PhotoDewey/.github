@@ -1,4 +1,4 @@
-# PhotoDewey
+<img width="812" height="161" alt="PhotoDewey text logo" src="https://github.com/user-attachments/assets/4bfac968-f393-4320-a330-3e00206307a0" />
 
 **A free photo library manager for Windows.**
 
