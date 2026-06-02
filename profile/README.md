@@ -10,8 +10,6 @@ Organize your photos with keyword tags, make non-destructive edits, browse your 
 
 ## Download
 
-Grab the latest installer from the [Releases page](../../../../PhotoDewey-for-Windows/releases/latest/):
-
 **[⬇ Download PhotoDewey for Windows](../../../../PhotoDewey-for-Windows/releases/latest/download/PhotoDewey-stable-Setup.exe)**
 
 **Requirements:** Windows 10 or Windows 11 (64-bit)
