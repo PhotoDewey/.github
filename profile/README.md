@@ -10,7 +10,7 @@ Organize your photos with keyword tags, make non-destructive edits, browse your 
 
 ## Download
 
-**[⬇ Download PhotoDewey for Windows](../../../../PhotoDewey-for-Windows/releases/latest/download/PhotoDewey-stable-Setup.exe)**
+**[⬇ Download PhotoDewey for Windows](../../../../PhotoDewey-Windows/releases/latest/download/PhotoDewey-stable-Setup.exe)**
 
 **Requirements:** Windows 10 or Windows 11 (64-bit)
 
@@ -39,13 +39,13 @@ JPEG · PNG · TIFF · WebP · NEF (Nikon RAW) · DNG
 ## Getting help
 
 **Something went wrong?**
-Use *Help → Send Feedback* inside the app — it attaches your version, OS, and an anonymous summary automatically. Or open a [bug report](../../../../PhotoDewey-for-Windows/issues/new/choose) here on GitHub if you'd like a public conversation other users can follow.
+Use *Help → Send Feedback* inside the app — it attaches your version, OS, and an anonymous summary automatically. Or open a [bug report](../../../../PhotoDewey-Windows/issues/new/choose) here on GitHub if you'd like a public conversation other users can follow.
 
 **Have a suggestion?**
-Check the [Issues tab](../../../../PhotoDewey-for-Windows/issues/) first to see if it's already there — a 👍 reaction on an existing request carries more weight than a duplicate. If it isn't listed, open a [feature request](../../../../PhotoDewey-for-Windows/issues/new/choose).
+Check the [Issues tab](../../../../PhotoDewey-Windows/issues/) first to see if it's already there — a 👍 reaction on an existing request carries more weight than a duplicate. If it isn't listed, open a [feature request](../../../../PhotoDewey-Windows/issues/new/choose).
 
 **Just a question?**
-The in-app User Manual (*Help → User Manual*) covers importing, tagging, editing, exporting, and more. For anything else, open a [workflow question](../../../../PhotoDewey-for-Windows/issues/new/choose).
+The in-app User Manual (*Help → User Manual*) covers importing, tagging, editing, exporting, and more. For anything else, open a [workflow question](../../../../PhotoDewey-Windows/issues/new/choose).
 
 ---
 
