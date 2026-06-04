@@ -19,34 +19,6 @@ param(
     [string]$Message = ""
 )
 
-# When launched via Explorer's "Run with PowerShell" (double-click), the console window is
-# transient: it closes the instant the script ends or calls exit, hiding any output or error.
-# Detect that case (parent process is explorer) so we can pause before the window disappears.
-# Runs from an existing terminal or a scheduled task are NOT paused, so they never hang.
-$script:LaunchedByExplorer = $false
-try {
-    $parentId   = (Get-CimInstance Win32_Process -Filter "ProcessId = $PID" -ErrorAction Stop).ParentProcessId
-    $parentName = (Get-Process -Id $parentId -ErrorAction Stop).ProcessName
-    $script:LaunchedByExplorer = ($parentName -eq 'explorer')
-} catch {}
-
-function Wait-BeforeClose {
-    if ($script:LaunchedByExplorer) {
-        Write-Host ""
-        $null = Read-Host "Press Enter to close"
-    }
-}
-
-# Catch any terminating error, show it, and pause so it is readable before the window closes.
-trap {
-    Write-Host ""
-    Write-Warning "Sync.ps1 stopped with an error:"
-    Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
-    if ($_.ScriptStackTrace) { Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray }
-    Wait-BeforeClose
-    exit 1
-}
-
 $script:results = [System.Collections.Generic.List[PSCustomObject]]::new()
 
 function Sync-Repo {
@@ -158,7 +130,6 @@ if (Test-Path $syncDestPath) {
             } catch {
                 Write-Warning "Sync.ps1 in .github ($repoTime) is newer than this one ($rootTime) and could not be updated automatically: $($_.Exception.Message). Update it manually before running."
             }
-            Wait-BeforeClose
             exit 1
         }
     }
@@ -232,5 +203,3 @@ foreach ($ext in $extensionDirs) {
 Write-Host ""
 Write-Host "=== Summary ==="
 $script:results | Format-Table -Property Repo, Action -AutoSize
-
-Wait-BeforeClose
