@@ -113,19 +113,51 @@ Sync-Repo "git@github.com:PhotoDewey/WebShop.git" "WebShop"
 Sync-Repo "git@github.com:PhotoDewey/.github.git" ".github"
 
 Write-Host ""
-Write-Host "Synchronizing the script..."
-# Keep a copy of this script in .github/scripts 
+Write-Host "Synchronizing scripts to .github..."
 $scriptsDest = ".github\scripts"
 if (-not (Test-Path $scriptsDest)) { New-Item -ItemType Directory -Path $scriptsDest | Out-Null }
-$destPath = "$scriptsDest\Sync.ps1"
-$srcTime  = (Get-Item $PSCommandPath).LastWriteTime
-$destTime = if (Test-Path $destPath) { (Get-Item $destPath).LastWriteTime } else { [datetime]::MinValue }
-if ($destTime -gt $srcTime) {
-    Write-Warning "A newer version of Sync.ps1 exists in .github/scripts ($destTime vs local $srcTime). Copy it locally before running."
+
+# Sync.ps1 gets a conflict check — a newer version in .github means someone updated it there and it must be copied back first
+$syncSrcTime  = (Get-Item $PSCommandPath).LastWriteTime
+$syncDestPath = "$scriptsDest\Sync.ps1"
+$syncDestTime = if (Test-Path $syncDestPath) { (Get-Item $syncDestPath).LastWriteTime } else { [datetime]::MinValue }
+if ($syncDestTime -gt $syncSrcTime) {
+    Write-Warning "A newer version of Sync.ps1 exists in .github/scripts ($syncDestTime vs local $syncSrcTime). Copy it locally before running."
     exit 1
-} elseif ($srcTime -gt $destTime) {
-    Copy-Item -Path $PSCommandPath -Destination $destPath -Force
-    Write-Host ".github/scripts/Sync.ps1 updated."
+} elseif ($syncSrcTime -gt $syncDestTime) {
+    Copy-Item -Path $PSCommandPath -Destination $syncDestPath -Force
+    Write-Host "  Sync.ps1 updated."
+}
+
+# All other root-level scripts are copied to .github/scripts if the local copy is newer
+$updatedScripts = [System.Collections.Generic.List[string]]::new()
+$newScripts     = [System.Collections.Generic.List[string]]::new()
+
+Get-ChildItem -Path "." -Filter "*.ps1" -File | Where-Object { $_.FullName -ne $PSCommandPath } | ForEach-Object {
+    $destPath = "$scriptsDest\$($_.Name)"
+    $isNew    = -not (Test-Path $destPath)
+    $destTime = if ($isNew) { [datetime]::MinValue } else { (Get-Item $destPath).LastWriteTime }
+    if ($_.LastWriteTime -gt $destTime) {
+        Copy-Item -Path $_.FullName -Destination $destPath -Force
+        if ($isNew) {
+            $newScripts.Add($_.Name)
+            Write-Host "  $($_.Name) added."
+        } else {
+            $updatedScripts.Add($_.Name)
+            Write-Host "  $($_.Name) updated."
+        }
+    }
+}
+
+if ($newScripts.Count -gt 0 -or $updatedScripts.Count -gt 0) {
+    $commitParts = @()
+    if ($newScripts.Count -gt 0)     { $commitParts += "Add $($newScripts -join ', ')" }
+    if ($updatedScripts.Count -gt 0) { $commitParts += "Update $($updatedScripts -join ', ')" }
+    $commitMsg = $commitParts -join '; '
+
+    git -C ".github" add "scripts"
+    git -C ".github" commit -m $commitMsg
+    Write-Host "  .github committed: $commitMsg"
 }
 
 
