@@ -106,49 +106,56 @@ function Sync-Extensions {
     }
 }
 
+# --- .github is always synced first, so this script can self-update before doing anything else ---
+Write-Host ""
+Write-Host "Syncing .github first..."
+Sync-Repo "git@github.com:PhotoDewey/.github.git" ".github"
+
+# Self-update gate: if the copy of this script in .github is newer than the one currently
+# running, this script is stale. Update it in place when possible, then exit so the user
+# re-runs the fresh version. Compare content (hash) first so identical files with drifted
+# timestamps (e.g. from a fresh checkout) are never treated as a conflict.
+$scriptsDest  = ".github\scripts"
+$syncDestPath = "$scriptsDest\Sync.ps1"
+if (Test-Path $syncDestPath) {
+    $rootHash = (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash
+    $repoHash = (Get-FileHash $syncDestPath  -Algorithm SHA256).Hash
+    if ($rootHash -ne $repoHash) {
+        $rootTime = (Get-Item $PSCommandPath).LastWriteTime
+        $repoTime = (Get-Item $syncDestPath).LastWriteTime
+        if ($repoTime -gt $rootTime) {
+            try {
+                Copy-Item -Path $syncDestPath -Destination $PSCommandPath -Force -ErrorAction Stop
+                Write-Warning "Sync.ps1 was out of date and has been updated from .github ($repoTime vs local $rootTime). Please re-run .\Sync.ps1."
+            } catch {
+                Write-Warning "Sync.ps1 in .github ($repoTime) is newer than this one ($rootTime) and could not be updated automatically: $($_.Exception.Message). Update it manually before running."
+            }
+            exit 1
+        }
+    }
+}
+
 Write-Host ""
 Write-Host "Running Sync-Repo for top-level repositories..."
 Sync-Repo "git@github.com:PhotoDewey/Source-Applications.git" "Application"
 Sync-Repo "git@github.com:PhotoDewey/WebShop.git" "WebShop"
-Sync-Repo "git@github.com:PhotoDewey/.github.git" ".github"
 
 Write-Host ""
 Write-Host "Running Sync-Extensions..."
 Sync-Extensions
 
-# Scripts are copied to .github only AFTER every repo (including extensions) has been
-# cloned/pulled, so an early exit in this block can never skip the initial clone.
+# Copy root scripts up to .github/scripts when their content differs and the local copy is
+# newer. Sync.ps1's reverse direction (.github newer than root) was already handled by the
+# self-update gate above, so here it can only ever be copied up. Hash comparison avoids
+# spurious copies/commits on timestamp drift.
 Write-Host ""
 Write-Host "Synchronizing scripts to .github..."
-$scriptsDest = ".github\scripts"
 if (-not (Test-Path $scriptsDest)) { New-Item -ItemType Directory -Path $scriptsDest | Out-Null }
 
-# Sync.ps1 gets a conflict check — a newer version in .github means someone updated it there
-# and it must be copied back first. Compare content (hash) first: identical files never
-# conflict, even when their timestamps differ (e.g. a fresh checkout sets new mtimes).
-$syncDestPath = "$scriptsDest\Sync.ps1"
-$syncSrcHash  = (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash
-$syncDestHash = if (Test-Path $syncDestPath) { (Get-FileHash $syncDestPath -Algorithm SHA256).Hash } else { $null }
-if ($syncDestHash -eq $syncSrcHash) {
-    # Identical content — nothing to copy, no conflict.
-} else {
-    $syncSrcTime  = (Get-Item $PSCommandPath).LastWriteTime
-    $syncDestTime = if (Test-Path $syncDestPath) { (Get-Item $syncDestPath).LastWriteTime } else { [datetime]::MinValue }
-    if ($syncDestTime -gt $syncSrcTime) {
-        Write-Warning "A newer version of Sync.ps1 exists in .github/scripts ($syncDestTime vs local $syncSrcTime). Copy it locally before running."
-        exit 1
-    } else {
-        Copy-Item -Path $PSCommandPath -Destination $syncDestPath -Force
-        Write-Host "  Sync.ps1 updated."
-    }
-}
-
-# All other root-level scripts are copied to .github/scripts when their content differs and
-# the local copy is newer. Hash comparison avoids spurious copies/commits on timestamp drift.
 $updatedScripts = [System.Collections.Generic.List[string]]::new()
 $newScripts     = [System.Collections.Generic.List[string]]::new()
 
-Get-ChildItem -Path "." -Filter "*.ps1" -File | Where-Object { $_.FullName -ne $PSCommandPath } | ForEach-Object {
+Get-ChildItem -Path "." -Filter "*.ps1" -File | ForEach-Object {
     $destPath = "$scriptsDest\$($_.Name)"
     $isNew    = -not (Test-Path $destPath)
     $destHash = if ($isNew) { $null } else { (Get-FileHash $destPath -Algorithm SHA256).Hash }
