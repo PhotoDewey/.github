@@ -19,14 +19,18 @@ param(
     [string]$Message = ""
 )
 
+$script:results = [System.Collections.Generic.List[PSCustomObject]]::new()
+
 function Sync-Repo {
     param([string]$Url, [string]$Dir)
     if (Test-Path "$Dir\.git") {
         Write-Host "Pulling $Dir..."
         git -C $Dir pull
+        $script:results.Add([PSCustomObject]@{ Repo = $Dir; Action = "Pulled" })
     } else {
         Write-Host "Cloning $Url..."
         git clone $Url $Dir
+        $script:results.Add([PSCustomObject]@{ Repo = $Dir; Action = "Cloned" })
     }
 }
 
@@ -37,6 +41,7 @@ function Push-Repo {
 
     # Stage and commit any uncommitted changes
     $status = git -C $Dir status --porcelain
+    $committed = $false
     if ($status) {
         if (-not $Message) {
             $pendingCount = @($status).Count
@@ -45,6 +50,7 @@ function Push-Repo {
         }
         git -C $Dir add -A
         git -C $Dir commit -m $Message
+        $committed = $true
     }
 
     # Pull and detect conflicts
@@ -53,8 +59,10 @@ function Push-Repo {
         $conflicts = git -C $Dir diff --name-only --diff-filter=U
         if ($conflicts) {
             Write-Warning "$Label - CONFLICTS in: $($conflicts -join ', '). Resolve manually and re-run."
+            $script:results.Add([PSCustomObject]@{ Repo = $Label; Action = "CONFLICT" })
         } else {
             Write-Warning "$Label - Pull failed: $pullOutput"
+            $script:results.Add([PSCustomObject]@{ Repo = $Label; Action = "Pull failed" })
         }
         return
     }
@@ -67,7 +75,11 @@ function Push-Repo {
 
     if ($ahead -gt 0) {
         git -C $Dir push
+        $action = if ($committed) { "Committed + pushed" } else { "Pushed" }
+    } else {
+        $action = if ($committed) { "Committed" } else { "Up to date" }
     }
+    $script:results.Add([PSCustomObject]@{ Repo = $Label; Action = $action })
 }
 
 function Sync-Extensions {
@@ -134,3 +146,7 @@ foreach ($ext in $extensionDirs) {
     Push-Repo "Extensions\$($ext.Name)\Source" "Extension $($ext.Name) / Source"
     Push-Repo "Extensions\$($ext.Name)\Public" "Extension $($ext.Name) / Public"
 }
+
+Write-Host ""
+Write-Host "=== Summary ==="
+$script:results | Format-Table -Property Repo, Action -AutoSize
