@@ -113,29 +113,47 @@ Sync-Repo "git@github.com:PhotoDewey/WebShop.git" "WebShop"
 Sync-Repo "git@github.com:PhotoDewey/.github.git" ".github"
 
 Write-Host ""
+Write-Host "Running Sync-Extensions..."
+Sync-Extensions
+
+# Scripts are copied to .github only AFTER every repo (including extensions) has been
+# cloned/pulled, so an early exit in this block can never skip the initial clone.
+Write-Host ""
 Write-Host "Synchronizing scripts to .github..."
 $scriptsDest = ".github\scripts"
 if (-not (Test-Path $scriptsDest)) { New-Item -ItemType Directory -Path $scriptsDest | Out-Null }
 
-# Sync.ps1 gets a conflict check — a newer version in .github means someone updated it there and it must be copied back first
-$syncSrcTime  = (Get-Item $PSCommandPath).LastWriteTime
+# Sync.ps1 gets a conflict check — a newer version in .github means someone updated it there
+# and it must be copied back first. Compare content (hash) first: identical files never
+# conflict, even when their timestamps differ (e.g. a fresh checkout sets new mtimes).
 $syncDestPath = "$scriptsDest\Sync.ps1"
-$syncDestTime = if (Test-Path $syncDestPath) { (Get-Item $syncDestPath).LastWriteTime } else { [datetime]::MinValue }
-if ($syncDestTime -gt $syncSrcTime) {
-    Write-Warning "A newer version of Sync.ps1 exists in .github/scripts ($syncDestTime vs local $syncSrcTime). Copy it locally before running."
-    exit 1
-} elseif ($syncSrcTime -gt $syncDestTime) {
-    Copy-Item -Path $PSCommandPath -Destination $syncDestPath -Force
-    Write-Host "  Sync.ps1 updated."
+$syncSrcHash  = (Get-FileHash $PSCommandPath -Algorithm SHA256).Hash
+$syncDestHash = if (Test-Path $syncDestPath) { (Get-FileHash $syncDestPath -Algorithm SHA256).Hash } else { $null }
+if ($syncDestHash -eq $syncSrcHash) {
+    # Identical content — nothing to copy, no conflict.
+} else {
+    $syncSrcTime  = (Get-Item $PSCommandPath).LastWriteTime
+    $syncDestTime = if (Test-Path $syncDestPath) { (Get-Item $syncDestPath).LastWriteTime } else { [datetime]::MinValue }
+    if ($syncDestTime -gt $syncSrcTime) {
+        Write-Warning "A newer version of Sync.ps1 exists in .github/scripts ($syncDestTime vs local $syncSrcTime). Copy it locally before running."
+        exit 1
+    } else {
+        Copy-Item -Path $PSCommandPath -Destination $syncDestPath -Force
+        Write-Host "  Sync.ps1 updated."
+    }
 }
 
-# All other root-level scripts are copied to .github/scripts if the local copy is newer
+# All other root-level scripts are copied to .github/scripts when their content differs and
+# the local copy is newer. Hash comparison avoids spurious copies/commits on timestamp drift.
 $updatedScripts = [System.Collections.Generic.List[string]]::new()
 $newScripts     = [System.Collections.Generic.List[string]]::new()
 
 Get-ChildItem -Path "." -Filter "*.ps1" -File | Where-Object { $_.FullName -ne $PSCommandPath } | ForEach-Object {
     $destPath = "$scriptsDest\$($_.Name)"
     $isNew    = -not (Test-Path $destPath)
+    $destHash = if ($isNew) { $null } else { (Get-FileHash $destPath -Algorithm SHA256).Hash }
+    $srcHash  = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+    if ($srcHash -eq $destHash) { return }  # identical content — skip
     $destTime = if ($isNew) { [datetime]::MinValue } else { (Get-Item $destPath).LastWriteTime }
     if ($_.LastWriteTime -gt $destTime) {
         Copy-Item -Path $_.FullName -Destination $destPath -Force
@@ -166,10 +184,6 @@ Write-Host "Running Push-Repo for top-level repositories..."
 Push-Repo "Application" "Application"
 Push-Repo "WebShop"     "WebShop"
 Push-Repo ".github"     ".github"
-
-Write-Host ""
-Write-Host "Running Sync-Extensions..."
-Sync-Extensions
 
 Write-Host ""
 Write-Host "Running Push-Repo for extensions..."
